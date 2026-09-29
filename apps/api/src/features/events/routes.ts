@@ -21,8 +21,10 @@ import {
 import { UsageEvent, type UsageEventDoc } from '@usage/db';
 import { validateBody, validateQuery, parsedQuery } from '../../middleware/validate.js';
 import { requireAuth, currentUserId } from '../../middleware/auth.js';
+import { unauthorized } from '../../lib/errors.js';
 import { requireApiKey, apiKeyId, apiKeyUserId } from '../../middleware/apiKey.js';
 import { rateLimit } from '../../middleware/rateLimit.js';
+import crypto from 'node:crypto';
 import { getRedis, createSubscriber } from '../../lib/redis.js';
 import { requestRollupsFor } from '../../lib/queue.js';
 import { childLogger } from '../../lib/logger.js';
@@ -192,6 +194,31 @@ eventsRouter.get('/', validateQuery(eventsQuerySchema), async (req, res) => {
 /* -------------------------------------------------------------------------- */
 
 /**
+ * A single-use, 60-second ticket that authorises one live-tail connection.
+ *
+ * EventSource cannot set request headers, so it cannot carry the bearer access
+ * token the rest of the API uses. The usual workarounds are both bad: putting
+ * the access token in the query string leaks a live credential into proxy logs
+ * and Referer headers, and falling back to the refresh cookie would rotate the
+ * session on every reconnect.
+ *
+ * So the client exchanges its bearer token - over a normal authenticated
+ * request, where headers work fine - for a ticket that is random, single-use,
+ * expires in a minute, and grants nothing except the right to open one stream.
+ * Leaking it costs almost nothing.
+ */
+const TICKET_TTL_SECONDS = 60;
+
+eventsRouter.post('/live-ticket', async (req, res) => {
+  const userId = currentUserId(req);
+  const ticket = crypto.randomBytes(24).toString('base64url');
+
+  await getRedis().set(`sse-ticket:${ticket}`, userId, 'EX', TICKET_TTL_SECONDS);
+
+  res.json({ ticket, expiresIn: TICKET_TTL_SECONDS });
+});
+
+/**
  * Live tail over Server-Sent Events.
  *
  * SSE rather than WebSockets, deliberately. The traffic here is one-directional
@@ -200,8 +227,28 @@ eventsRouter.get('/', validateQuery(eventsQuerySchema), async (req, res) => {
  * second protocol, its own auth handshake, and hand-rolled reconnect logic, in
  * exchange for a bidirectional channel nothing here needs.
  */
-eventsRouter.get('/live', async (req, res) => {
-  const userId = currentUserId(req);
+/**
+ * Mounted BEFORE the router-level requireAuth would apply, because this route
+ * authenticates with a ticket rather than a bearer token. GETDEL makes the
+ * ticket single-use: redeeming it atomically removes it, so a ticket captured
+ * from a log cannot be replayed.
+ */
+export const liveTailRouter = Router();
+
+liveTailRouter.get('/live', async (req, res, next) => {
+  const ticket = typeof req.query['ticket'] === 'string' ? req.query['ticket'] : null;
+
+  if (!ticket) {
+    next(unauthorized('A stream ticket is required'));
+    return;
+  }
+
+  const userId = await getRedis().getdel(`sse-ticket:${ticket}`);
+
+  if (!userId) {
+    next(unauthorized('Stream ticket is invalid or expired'));
+    return;
+  }
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',

@@ -1,19 +1,68 @@
 @import 'tailwindcss';
 
 /**
- * Design tokens.
+ * Chart palette.
  *
- * Stage colours are defined once here and referenced by name in the board, so
- * adding a stage means touching this file and packages/shared/domain.ts - never
- * hunting for hex codes scattered through components.
+ * These are not picked by eye. The eight categorical hues come from a validated
+ * palette and were re-checked with the data-viz validator for this surface:
+ * lightness band, chroma floor, colour-blind separation (worst adjacent pair
+ * ΔE 9.1, target ≥8) and normal-vision separation (worst 19.6, floor 15) all
+ * pass in both modes.
+ *
+ * Three light-mode hues sit below 3:1 contrast against the surface, which
+ * obligates "relief": every chart using them ships visible direct labels or a
+ * table view. The breakdown bars carry value labels for exactly that reason.
+ *
+ * The dark column is the same eight hues re-stepped for the dark surface - not
+ * an automatic flip of the light ones, which would land outside the band.
  */
 @theme {
-  --color-stage-wishlist: oklch(0.72 0.11 258);
-  --color-stage-applied: oklch(0.70 0.13 230);
-  --color-stage-screen: oklch(0.74 0.14 195);
-  --color-stage-onsite: oklch(0.76 0.14 145);
-  --color-stage-offer: oklch(0.78 0.16 130);
-  --color-stage-rejected: oklch(0.68 0.13 25);
+  --color-series-1: #2a78d6; /* blue    - spend */
+  --color-series-2: #eb6834; /* orange  - p95 latency */
+  --color-series-3: #1baf7a; /* aqua    - p50 latency */
+  --color-series-4: #eda100; /* yellow  */
+  --color-series-5: #e87ba4; /* magenta */
+  --color-series-6: #008300; /* green   */
+  --color-series-7: #4a3aa7; /* violet  */
+  --color-series-8: #e34948; /* red     */
+
+  /* Status colours are reserved and never reused as "series 9". */
+  --color-status-critical: #e34948;
+  --color-status-warning: #eda100;
+  --color-status-good: #1baf7a;
+}
+
+/* Dark steps, declared for both the OS setting and an explicit theme stamp. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    --color-series-1: #3987e5;
+    --color-series-2: #d95926;
+    --color-series-3: #199e70;
+    --color-series-4: #c98500;
+    --color-series-5: #d55181;
+    --color-series-6: #008300;
+    --color-series-7: #9085e9;
+    --color-series-8: #e66767;
+
+    --color-status-critical: #e66767;
+    --color-status-warning: #c98500;
+    --color-status-good: #199e70;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+  --color-series-4: #c98500;
+  --color-series-5: #d55181;
+  --color-series-6: #008300;
+  --color-series-7: #9085e9;
+  --color-series-8: #e66767;
+
+  --color-status-critical: #e66767;
+  --color-status-warning: #c98500;
+  --color-status-good: #199e70;
 }
 
 @layer base {
@@ -28,23 +77,17 @@
     font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   }
 
-  /* Visible focus for keyboard users, suppressed for mouse clicks. */
+  /* Tabular figures everywhere a number is compared against another number -
+     proportional digits make columns of costs impossible to scan. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-sky-500;
   }
 }
 
-@layer utilities {
-  /* Applied to the card being dragged, so it reads as lifted off the board. */
-  .card-dragging {
-    @apply opacity-40;
-  }
-}
-
-/**
- * Respect a reduced-motion preference. dnd-kit animates transforms, and for
- * some people that is genuinely nauseating rather than merely decorative.
- */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -9,8 +9,6 @@ export default defineConfig({
       'packages/**/*.test.ts',
       'apps/api/**/*.test.ts',
       'apps/worker/**/*.test.ts',
-      // reorder.ts is deliberately pure (no React, no dnd-kit), so its tests run
-      // in the node environment alongside everything else - no jsdom needed.
       'apps/web/**/*.test.ts',
     ],
     exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
