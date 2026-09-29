@@ -1,0 +1,56 @@
+@import 'tailwindcss';
+
+/**
+ * Design tokens.
+ *
+ * Stage colours are defined once here and referenced by name in the board, so
+ * adding a stage means touching this file and packages/shared/domain.ts - never
+ * hunting for hex codes scattered through components.
+ */
+@theme {
+  --color-stage-wishlist: oklch(0.72 0.11 258);
+  --color-stage-applied: oklch(0.70 0.13 230);
+  --color-stage-screen: oklch(0.74 0.14 195);
+  --color-stage-onsite: oklch(0.76 0.14 145);
+  --color-stage-offer: oklch(0.78 0.16 130);
+  --color-stage-rejected: oklch(0.68 0.13 25);
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply dark:bg-slate-950 dark:text-slate-100;
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Visible focus for keyboard users, suppressed for mouse clicks. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-sky-500;
+  }
+}
+
+@layer utilities {
+  /* Applied to the card being dragged, so it reads as lifted off the board. */
+  .card-dragging {
+    @apply opacity-40;
+  }
+}
+
+/**
+ * Respect a reduced-motion preference. dnd-kit animates transforms, and for
+ * some people that is genuinely nauseating rather than merely decorative.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
