@@ -13,9 +13,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose, { Types } from 'mongoose';
-import { Rollup, UsageEvent, User } from '@usage/db';
+import { Rollup, UsageEvent, User } from './index.js';
 import { usdToMicros } from '@usage/shared';
-import { handleBuildRollups, percentile, scheduledWindow } from './buildRollups.js';
+import { handleBuildRollups, percentile, scheduledWindow } from './rollups.js';
 
 let memoryServer: MongoMemoryServer;
 let userId: Types.ObjectId;

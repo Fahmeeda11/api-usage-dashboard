@@ -36,10 +36,17 @@ import {
   type BuildRollupsJob,
   type Granularity,
 } from '@usage/shared';
-import { Rollup, UsageEvent } from '@usage/db';
-import { childLogger } from '../logger.js';
+import { Rollup } from './models/rollup.js';
+import { UsageEvent } from './models/usageEvent.js';
 
-const log = childLogger('build-rollups');
+/**
+ * Callers supply their own logger. The worker has pino; the seed script has
+ * console. Hard-coding one here would drag a logging dependency into the data
+ * layer and make this untestable without stubbing it.
+ */
+export type RollupLogger = (event: string, detail: Record<string, unknown>) => void;
+
+const noopLog: RollupLogger = () => {};
 
 export interface RollupResult {
   granularity: Granularity;
@@ -56,7 +63,10 @@ export interface RollupResult {
  */
 let percentileOperatorAvailable = true;
 
-export async function handleBuildRollups(rawPayload: unknown): Promise<RollupResult> {
+export async function handleBuildRollups(
+  rawPayload: unknown,
+  log: RollupLogger = noopLog,
+): Promise<RollupResult> {
   const payload: BuildRollupsJob = buildRollupsJobSchema.parse(rawPayload);
   const { granularity } = payload;
   const from = new Date(payload.from);
@@ -144,9 +154,9 @@ export async function handleBuildRollups(rawPayload: unknown): Promise<RollupRes
     groups = (await UsageEvent.aggregate(pipeline).allowDiskUse(true)) as AggregatedGroup[];
   } catch (err) {
     if (percentileOperatorAvailable && isUnknownOperatorError(err)) {
-      log.warn('$percentile unavailable (needs MongoDB 7); falling back to manual percentiles');
+      log('percentile-unavailable', { note: 'needs MongoDB 7, using manual percentiles' });
       percentileOperatorAvailable = false;
-      return handleBuildRollups(rawPayload);
+      return handleBuildRollups(rawPayload, log);
     }
     throw err;
   }
@@ -165,7 +175,7 @@ export async function handleBuildRollups(rawPayload: unknown): Promise<RollupRes
 
     if (stale.length > 0) {
       await Rollup.deleteMany({ _id: { $in: stale.map((r) => r._id) } });
-      log.info({ granularity, count: stale.length }, 'cleared rollups for an emptied window');
+      log('cleared-empty-window', { granularity, count: stale.length });
     }
 
     return {
@@ -241,19 +251,16 @@ export async function handleBuildRollups(rawPayload: unknown): Promise<RollupRes
 
   if (orphaned.length > 0) {
     await Rollup.deleteMany({ _id: { $in: orphaned } });
-    log.debug({ count: orphaned.length }, 'removed orphaned rollups');
+    log('removed-orphans', { count: orphaned.length });
   }
 
-  log.info(
-    {
-      granularity,
-      buckets: operations.length,
-      events: totalEvents,
-      users: affectedUsers.size,
-      ms: Date.now() - started,
-    },
-    'rollups rebuilt',
-  );
+  log('rollups-rebuilt', {
+    granularity,
+    buckets: operations.length,
+    events: totalEvents,
+    users: affectedUsers.size,
+    ms: Date.now() - started,
+  });
 
   return {
     granularity,

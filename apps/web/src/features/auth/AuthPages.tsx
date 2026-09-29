@@ -88,7 +88,7 @@ export function LoginPage() {
     setBanner(null);
     try {
       await login(values.email, values.password);
-      navigate('/board', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       handle(err);
     }
@@ -97,7 +97,7 @@ export function LoginPage() {
   return (
     <AuthShell
       title="API Usage"
-      subtitle="Sign in to your pipeline"
+      subtitle="Sign in to your dashboard"
       footer={
         <>
           No account?{' '}
@@ -158,7 +158,7 @@ export function SignupPage() {
     setBanner(null);
     try {
       await signup(values.name, values.email, values.password);
-      navigate('/board', { replace: true });
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       handle(err);
     }
@@ -167,7 +167,7 @@ export function SignupPage() {
   return (
     <AuthShell
       title="Create an account"
-      subtitle="Start tracking your applications"
+      subtitle="Start tracking your API spend"
       footer={
         <>
           Already have one?{' '}

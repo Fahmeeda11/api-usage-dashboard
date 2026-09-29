@@ -15,3 +15,4 @@ export * from './models/user.js';
 export * from './models/apiKey.js';
 export * from './models/usageEvent.js';
 export * from './models/rollup.js';
+export * from './rollups.js';

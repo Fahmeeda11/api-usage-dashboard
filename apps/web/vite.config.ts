@@ -29,5 +29,26 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        /**
+         * Split the vendor libraries out of the app bundle.
+         *
+         * Recharts is by far the largest dependency here and it is only needed
+         * on the dashboard route - bundling it with the app means the login
+         * screen downloads a charting library before anyone has signed in.
+         * Separate chunks also cache better: shipping an app fix should not
+         * invalidate the vendor code, which has not changed.
+         *
+         * Only recharts is split out. Splitting react and @tanstack into their
+         * own chunks as well produced "Circular chunk: react -> query -> react"
+         * - they share modules, so forcing them apart makes the chunks import
+         * each other. One well-chosen split beats several that fight.
+         */
+        manualChunks: {
+          charts: ['recharts'],
+        },
+      },
+    },
   },
 });

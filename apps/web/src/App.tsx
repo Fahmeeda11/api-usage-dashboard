@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth.js';
 import { LoginPage, SignupPage } from './features/auth/AuthPages.js';
-import { BoardPage } from './features/board/BoardPage.js';
+import { DashboardPage } from './features/dashboard/DashboardPage.js';
+import { KeysPage } from './features/keys/KeysPage.js';
 import { Spinner } from './components/ui.js';
 
 /**
@@ -41,7 +42,7 @@ function RedirectIfAuthed({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user) return <Navigate to="/board" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
 }
@@ -66,15 +67,23 @@ export function App() {
         }
       />
       <Route
-        path="/board"
+        path="/dashboard"
         element={
           <RequireAuth>
-            <BoardPage />
+            <DashboardPage />
           </RequireAuth>
         }
       />
-      <Route path="/" element={<Navigate to="/board" replace />} />
-      <Route path="*" element={<Navigate to="/board" replace />} />
+      <Route
+        path="/keys"
+        element={
+          <RequireAuth>
+            <KeysPage />
+          </RequireAuth>
+        }
+      />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

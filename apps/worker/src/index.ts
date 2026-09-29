@@ -18,10 +18,15 @@ import {
   type BuildRollupsJob,
   type Granularity,
 } from '@usage/shared';
-import { connectDb, disconnectDb } from '@usage/db';
+import {
+  connectDb,
+  disconnectDb,
+  handleBuildRollups,
+  cachePatternsFor,
+  scheduledWindow,
+} from '@usage/db';
 import { env } from './env.js';
 import { logger } from './logger.js';
-import { handleBuildRollups, cachePatternsFor, scheduledWindow } from './handlers/buildRollups.js';
 
 function createConnection(): Redis {
   const client = new IORedis(env.REDIS_URL, { maxRetriesPerRequest: null });
@@ -69,7 +74,10 @@ async function main(): Promise<void> {
   const worker = new Worker<BuildRollupsJob>(
     QUEUE_NAMES.rollups,
     async (job: Job<BuildRollupsJob>) => {
-      const result = await handleBuildRollups(job.data);
+      // The data layer stays logger-agnostic; the worker supplies pino.
+      const result = await handleBuildRollups(job.data, (event, detail) =>
+        logger.info(detail, event),
+      );
       await invalidateCaches(connection, result.affectedUsers);
       return result;
     },

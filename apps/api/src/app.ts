@@ -18,7 +18,7 @@ import { logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { authRouter } from './features/auth/routes.js';
 import { keysRouter } from './features/keys/routes.js';
-import { ingestRouter, eventsRouter } from './features/events/routes.js';
+import { ingestRouter, eventsRouter, liveTailRouter } from './features/events/routes.js';
 import { metricsRouter } from './features/metrics/routes.js';
 
 export function createApp(): Express {
@@ -87,6 +87,9 @@ export function createApp(): Express {
 
   app.use('/auth', authRouter);
   app.use('/keys', keysRouter);
+  // Ticket-authenticated, so it must be mounted before the bearer-authenticated
+  // events router that would otherwise reject it.
+  app.use('/events', liveTailRouter);
   app.use('/events', eventsRouter);
   app.use('/metrics', metricsRouter);
 
