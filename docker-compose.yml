@@ -4,7 +4,10 @@ services:
     container_name: usage-mongo
     restart: unless-stopped
     ports:
-      - '27017:27017'
+      # Host port 27018, so this stack can run alongside job-tracker's, which
+      # uses the default 27017. Inside the container Mongo still listens on
+      # 27017 - only the host-side mapping differs.
+      - '27018:27017'
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -19,7 +22,8 @@ services:
     container_name: usage-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      # 6380 for the same reason - job-tracker's Redis holds 6379.
+      - '6380:6379'
     command: ['redis-server', '--appendonly', 'yes']
     volumes:
       - redis-data:/data

@@ -31,7 +31,7 @@ T = TypeVar("T")
 class UsageClient:
     api_key: str
     project: str
-    base_url: str = "http://localhost:4000"
+    base_url: str = "http://localhost:4001"
     flush_interval_s: float = 5.0
     max_batch_size: int = 100
     on_error: Callable[[Exception], None] | None = None

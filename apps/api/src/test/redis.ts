@@ -18,7 +18,7 @@ let cached: boolean | null = null;
 export async function isRedisAvailable(): Promise<boolean> {
   if (cached !== null) return cached;
 
-  const client = new IORedis(process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6379', {
+  const client = new IORedis(process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6380', {
     maxRetriesPerRequest: 0,
     connectTimeout: 1000,
     retryStrategy: () => null,
@@ -53,7 +53,7 @@ export async function isRedisAvailable(): Promise<boolean> {
 
 /** Clear rate-limit keys between tests so one test's budget does not leak. */
 export async function clearRateLimitKeys(): Promise<void> {
-  const client = new IORedis(process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6379', {
+  const client = new IORedis(process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6380', {
     maxRetriesPerRequest: 0,
     retryStrategy: () => null,
     enableOfflineQueue: false,
