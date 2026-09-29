@@ -1,0 +1,46 @@
+{
+  "name": "api-usage-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Ingest endpoint and dashboard for LLM/API usage: spend, latency and errors. MERN + TypeScript.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n shared,db,api,worker,web -c gray,gray,blue,magenta,green \"npm:dev:shared\" \"npm:dev:db\" \"npm:dev:api\" \"npm:dev:worker\" \"npm:dev:web\"",
+    "dev:api": "npm run dev -w @usage/api",
+    "dev:worker": "npm run dev -w @usage/worker",
+    "dev:web": "npm run dev -w @usage/web",
+    "build": "npm run build -w @usage/shared && npm run build -w @usage/db && npm run build -w @usage/api && npm run build -w @usage/worker && npm run build -w @usage/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "seed": "npm run seed -w @usage/api",
+    "predev": "npm run build -w @usage/shared && npm run build -w @usage/db",
+    "dev:shared": "npm run dev -w @usage/shared",
+    "dev:db": "npm run dev -w @usage/db",
+    "pretest": "npm run build -w @usage/shared && npm run build -w @usage/db"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vite": "^6.0.6",
+    "vitest": "^3.2.4"
+  }
+}

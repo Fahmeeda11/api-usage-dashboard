@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to the same branch cancels the run already in progress - no point
+# spending minutes on a commit that has already been superseded.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # A real Redis, so the sliding-window rate limiter is tested against the
+    # actual Lua semantics rather than a mock's approximation of them. These
+    # tests skip locally when Redis is absent; here they always run.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      REDIS_URL: redis://127.0.0.1:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # shared and db must be built before anything can typecheck against them:
+      # both publish from dist/, and the API, worker and web all import them.
+      - name: Build shared packages
+        run: |
+          npm run build -w @usage/shared
+          npm run build -w @usage/db
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # mongodb-memory-server downloads a real mongod on first run. Caching it
+      # saves ~30s per run and removes a dependency on their CDN being up.
+      - name: Cache MongoDB binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  # Fails the build if a secret was ever committed. Cheap, and the one check
+  # whose absence is unrecoverable - a leaked key in git history stays there.
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan history for secrets
+        run: |
+          if git log --all -p | grep -inE 'sk-[a-zA-Z0-9]{16}|mongodb\+srv://[^ ]*:[^ ]*@|-----BEGIN (RSA|OPENSSH) PRIVATE KEY-----'; then
+            echo "::error::A credential appears in the git history"
+            exit 1
+          fi
+          echo "No secrets found in history"
+
+      - name: Ensure no .env file is tracked
+        run: |
+          if git ls-files | grep -E '^\.env$|/\.env$'; then
+            echo "::error::A .env file is tracked by git"
+            exit 1
+          fi
+          echo "No tracked .env files"
