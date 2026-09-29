@@ -38,10 +38,10 @@ node -e "console.log('JWT_REFRESH_SECRET=' + require('crypto').randomBytes(48).t
 
 npm run db:up                 # Mongo + Redis
 npm run seed -- --rollup      # a week of realistic traffic, rollups computed inline
-npm run dev                   # api :4000, web :5173, worker
+npm run dev                   # api :4001, web :5174, worker
 ```
 
-Open http://localhost:5173. The seed prints demo credentials and an ingest key.
+Open http://localhost:5174. The seed prints demo credentials and an ingest key.
 
 ```bash
 npm test         # 79 tests (+2 that need Redis)
@@ -55,7 +55,7 @@ npm run build
 ## Sending events
 
 ```bash
-curl -X POST http://localhost:4000/v1/events \
+curl -X POST http://localhost:4001/v1/events \
   -H "Authorization: Bearer usg_your_key" \
   -H "Content-Type: application/json" \
   -d '{"events":[{

@@ -42,7 +42,7 @@ export class UsageClient {
 
   constructor(options: UsageClientOptions) {
     this.options = {
-      baseUrl: 'http://localhost:4000',
+      baseUrl: 'http://localhost:4001',
       flushIntervalMs: 5_000,
       maxBatchSize: 100,
       ...options,
@@ -136,7 +136,7 @@ export class UsageClient {
 
 // const usage = new UsageClient({
 //   apiKey: process.env.USAGE_API_KEY!,
-//   baseUrl: 'http://localhost:4000',
+//   baseUrl: 'http://localhost:4001',
 //   project: 'production-rag-system',
 // });
 //

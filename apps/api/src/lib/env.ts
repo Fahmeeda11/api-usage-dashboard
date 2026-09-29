@@ -15,6 +15,10 @@
  */
 
 import { z } from 'zod';
+import { loadEnvFile } from './loadEnvFile.js';
+
+// Must run BEFORE the schema below reads process.env.
+const loadedFrom = loadEnvFile();
 
 /** Minimum secret length. Short JWT secrets are brute-forceable offline. */
 const SECRET_MIN = 32;
@@ -78,7 +82,8 @@ function loadEnv(): Env {
     // Deliberately console.error + exit rather than throw: a stack trace here is
     // noise, and this is the one message someone needs to read to fix their setup.
     console.error(
-      ['', 'Invalid environment configuration:', ...lines, '', 'See .env.example for the full list.', ''].join(
+      ['', 'Invalid environment configuration:', ...lines, '', loadedFrom ? `Loaded from: ${loadedFrom}` : 'No .env file found - relying on the real environment.',
+        'See .env.example for the full list.', ''].join(
         '\n',
       ),
     );
