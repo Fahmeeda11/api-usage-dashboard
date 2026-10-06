@@ -41,6 +41,15 @@ npm run seed -- --rollup      # a week of realistic traffic, rollups computed in
 npm run dev                   # api :4001, web :5174, worker
 ```
 
+On a machine with limited RAM, `npm run dev:light` runs the same three app
+processes but skips the `tsc --watch` on `packages/shared` and `packages/db`
+(it builds them once first). That is two fewer Node processes per project —
+worth it unless you are actively editing those packages.
+
+```bash
+npm run dev:light
+```
+
 Open http://localhost:5174. The seed prints demo credentials and an ingest key.
 
 ```bash

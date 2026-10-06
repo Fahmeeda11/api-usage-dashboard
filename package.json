@@ -29,7 +29,8 @@
     "predev": "npm run build -w @usage/shared && npm run build -w @usage/db",
     "dev:shared": "npm run dev -w @usage/shared",
     "dev:db": "npm run dev -w @usage/db",
-    "pretest": "npm run build -w @usage/shared && npm run build -w @usage/db"
+    "pretest": "npm run build -w @usage/shared && npm run build -w @usage/db",
+    "dev:light": "npm run build -w @usage/shared && npm run build -w @usage/db && concurrently -n api,worker,web -c blue,magenta,green \"npm:dev:api\" \"npm:dev:worker\" \"npm:dev:web\""
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
